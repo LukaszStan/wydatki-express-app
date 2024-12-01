@@ -1,7 +1,8 @@
-var express = require('express');
-var router = express.Router();
-var path = require('path');
-var fs = require('fs');
+const express = require('express');
+const router = express.Router();
+const path = require('path');
+const fs = require('fs');
+const { check, validationResult } = require('express-validator');
 
 const filePath = path.join(__dirname, '../public/data/expenses-data.json');
 
@@ -177,12 +178,19 @@ router.get('/:id', async (req, res) => {
  *       400:
  *         description: Nieprawidłowe dane wejściowe
  */
-router.post('/', async (req, res) => {
-    const { title, amount, category, date, description } = req.body;
-
-    if (!title || !amount || !category || !date || !description) {
-        return res.status(400).json({ error: 'Wszystkie pola są wymagane' });
+router.post('/', [
+    check('title').notEmpty().isString().isLength({ min: 3 }).withMessage('Tytuł jest wymagany i musi mieć co najmniej 3 znaki'),
+    check('amount').notEmpty().isFloat({ gt: 0 }).withMessage('Kwota musi być liczbą większą od zera'),
+    check('category').notEmpty().isString().withMessage('Kategoria jest wymagana'),
+    check('date').notEmpty().isISO8601().withMessage('Data musi być w formacie ISO 8601'),
+    check('description').optional().isString().isLength({ min: 5 }).withMessage('Opis, jeśli jest podany, musi mieć co najmniej 5 znaków')
+] ,async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
     }
+
+    const { title, amount, category, date, description } = req.body;
 
     try {
         const expenses = await readDataFromFile();
@@ -235,12 +243,19 @@ router.post('/', async (req, res) => {
  *       404:
  *         description: Wydatek nie znaleziony
  */
-router.put('/:id', async (req, res) => {
-    const { title, amount, category, date, description } = req.body;
-
-    if (!title || !amount || !category || !date || !description) {
-        return res.status(400).json({ error: 'Wszystkie pola są wymagane' });
+router.put('/:id', [
+    check('title').notEmpty().isString().isLength({ min: 3 }).withMessage('Tytuł jest wymagany i musi mieć co najmniej 3 znaki'),
+    check('amount').notEmpty().isFloat({ gt: 0 }).withMessage('Kwota musi być liczbą większą od zera'),
+    check('category').notEmpty().isString().withMessage('Kategoria jest wymagana'),
+    check('date').notEmpty().isISO8601().withMessage('Data musi być w formacie ISO 8601'),
+    check('description').optional().isString().isLength({ min: 5 }).withMessage('Opis, jeśli jest podany, musi mieć co najmniej 5 znaków')
+] ,async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
     }
+
+    const { title, amount, category, date, description } = req.body;
 
     try {
         const expenses = await readDataFromFile();
@@ -299,7 +314,18 @@ router.put('/:id', async (req, res) => {
  *       404:
  *         description: Wydatek nie znaleziony
  */
-router.patch('/:id', async (req, res) => {
+router.patch('/:id', [
+    check('title').notEmpty().isString().isLength({ min: 3 }).withMessage('Tytuł jest wymagany i musi mieć co najmniej 3 znaki'),
+    check('amount').notEmpty().isFloat({ gt: 0 }).withMessage('Kwota musi być liczbą większą od zera'),
+    check('category').notEmpty().isString().withMessage('Kategoria jest wymagana'),
+    check('date').notEmpty().isISO8601().withMessage('Data musi być w formacie ISO 8601'),
+    check('description').optional().isString().isLength({ min: 5 }).withMessage('Opis, jeśli jest podany, musi mieć co najmniej 5 znaków')
+] ,async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
     const updates = req.body;
 
     try {
