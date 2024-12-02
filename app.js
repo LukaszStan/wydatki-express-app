@@ -69,7 +69,7 @@ app.use((err, req, res, next) => {
   console.error('Błąd: ', err.message);
   console.error('Szczegóły błędu: ', err.stack);
 
-  // zwracanie kodeu 500 i wiadomosci
+  // zwracanie bledu 500 i wiadomosci
   res.status(500).json({
     message: 'Wystąpił błąd serwera'
   });

@@ -182,7 +182,7 @@ router.post('/', [
     check('title').notEmpty().isString().isLength({ min: 3 }).withMessage('Tytuł jest wymagany i musi mieć co najmniej 3 znaki'),
     check('amount').notEmpty().isFloat({ gt: 0 }).withMessage('Kwota musi być liczbą większą od zera'),
     check('category').notEmpty().isString().withMessage('Kategoria jest wymagana'),
-    check('date').notEmpty().isISO8601().withMessage('Data musi być w formacie ISO 8601'),
+    check('date').notEmpty().isISO8601().withMessage('Data musi być w poprawnym formacie'),
     check('description').optional().isString().isLength({ min: 5 }).withMessage('Opis, jeśli jest podany, musi mieć co najmniej 5 znaków')
 ] ,async (req, res) => {
     const errors = validationResult(req);
@@ -247,7 +247,7 @@ router.put('/:id', [
     check('title').notEmpty().isString().isLength({ min: 3 }).withMessage('Tytuł jest wymagany i musi mieć co najmniej 3 znaki'),
     check('amount').notEmpty().isFloat({ gt: 0 }).withMessage('Kwota musi być liczbą większą od zera'),
     check('category').notEmpty().isString().withMessage('Kategoria jest wymagana'),
-    check('date').notEmpty().isISO8601().withMessage('Data musi być w formacie ISO 8601'),
+    check('date').notEmpty().isISO8601().withMessage('Data musi być w poprawnym formacie'),
     check('description').optional().isString().isLength({ min: 5 }).withMessage('Opis, jeśli jest podany, musi mieć co najmniej 5 znaków')
 ] ,async (req, res) => {
     const errors = validationResult(req);
@@ -315,10 +315,10 @@ router.put('/:id', [
  *         description: Wydatek nie znaleziony
  */
 router.patch('/:id', [
-    check('title').notEmpty().isString().isLength({ min: 3 }).withMessage('Tytuł jest wymagany i musi mieć co najmniej 3 znaki'),
-    check('amount').notEmpty().isFloat({ gt: 0 }).withMessage('Kwota musi być liczbą większą od zera'),
-    check('category').notEmpty().isString().withMessage('Kategoria jest wymagana'),
-    check('date').notEmpty().isISO8601().withMessage('Data musi być w formacie ISO 8601'),
+    check('title').optional().isString().isLength({ min: 3 }).withMessage('Tytuł jest wymagany i musi mieć co najmniej 3 znaki'),
+    check('amount').optional().isFloat({ gt: 0 }).withMessage('Kwota musi być liczbą większą od zera'),
+    check('category').optional().isString().withMessage('Kategoria jest wymagana'),
+    check('date').optional().isISO8601().withMessage('Data musi być w poprawnym formacie'),
     check('description').optional().isString().isLength({ min: 5 }).withMessage('Opis, jeśli jest podany, musi mieć co najmniej 5 znaków')
 ] ,async (req, res) => {
     const errors = validationResult(req);
