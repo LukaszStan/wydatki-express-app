@@ -1,11 +1,11 @@
 [
   {
     "id": 1,
-    "title": "Zakup spożywczy",
-    "amount": 150,
+    "title": "zakup spożywczy",
+    "amount": 250,
     "category": "jedzenie",
     "date": "2024-04-10",
-    "description": "Zakup produktów w sklepie Lidl."
+    "description": "zakup produktów w sklepie lidl."
   },
   {
     "id": 2,
@@ -33,33 +33,38 @@
   },
   {
     "id": 5,
-    "title": "test",
+    "title": "test11",
     "amount": 100,
     "category": "jedzenie",
     "date": "2024-10-24"
   },
   {
-    "id": 6,
-    "title": "testtest",
-    "amount": 250,
-    "category": "jedzenie",
-    "date": "2024-10-24",
-    "description": "aaaaaa"
-  },
-  {
-    "id": 7,
-    "title": "ccccc",
-    "amount": 200,
-    "category": "jedzenie",
-    "date": "2024-11-10",
-    "description": "aaaaaa"
-  },
-  {
     "id": 8,
-    "title": "ccccc",
-    "amount": 200,
+    "title": "lab10",
+    "amount": 21000,
+    "category": "rozrywka",
+    "date": "2024-12-08"
+  },
+  {
+    "id": 9,
+    "title": "tet",
+    "amount": 14105,
     "category": "jedzenie",
-    "date": "2024-04-10",
-    "description": "aaaaaa"
+    "date": "2024-12-21"
+  },
+  {
+    "id": 10,
+    "title": "test11",
+    "amount": 12,
+    "category": "jedzenie",
+    "date": "2024-11-27"
+  },
+  {
+    "id": 11,
+    "title": "testlab10",
+    "amount": 250,
+    "category": "transport",
+    "date": "2024-12-16",
+    "description": "testlab10"
   }
 ]
