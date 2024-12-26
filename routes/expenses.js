@@ -4,6 +4,93 @@ const { check, validationResult } = require('express-validator');
 const Expense = require('../models/Expense');
 const Category = require('../models/Category');
 
+// Suma wydatków w każdej kategorii
+router.get('/summary-by-category', async (req, res) => {
+    try {
+        const summary = await Expense.aggregate([
+            {
+                $group: {
+                    _id: "$category",
+                    totalAmount: { $sum: "$amount" },
+                    count: { $sum: 1 },
+                },
+            },
+            {
+                $lookup: {
+                    from: "categories",
+                    localField: "_id",
+                    foreignField: "_id",
+                    as: "category",
+                },
+            },
+            {
+                $unwind: "$category",
+            },
+            {
+                $project: {
+                    _id: 0,
+                    category: "$category.name",
+                    totalAmount: 1,
+                    count: 1,
+                },
+            },
+            {
+                $sort: { totalAmount: -1 },
+            },
+        ]);
+
+        res.json(summary);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Średnie wydatki na dzień
+router.get('/average-daily', async (req, res) => {
+    const { startDate, endDate } = req.query;
+
+    if (!startDate || !endDate) {
+        return res.status(400).json({ error: 'Musisz podać startDate i endDate w formacie YYYY-MM-DD' });
+    }
+
+    try {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+
+        if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+            return res.status(400).json({ error: 'Nieprawidłowe formaty dat. Użyj formatu YYYY-MM-DD.' });
+        }
+
+        if (start > end) {
+            return res.status(400).json({ error: 'startDate musi być wcześniejsze niż endDate.' });
+        }
+
+        const result = await Expense.aggregate([
+            {
+                $match: {
+                    date: { $gte: start, $lte: end },
+                },
+            },
+            {
+                $group: {
+                    _id: null,
+                    totalAmount: { $sum: "$amount" },
+                },
+            },
+        ]);
+
+        const totalAmount = result.length > 0 ? result[0].totalAmount : 0;
+
+        const daysCount = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+
+        const averageDaily = totalAmount / daysCount;
+
+        res.json({ totalAmount, averageDaily, daysCount });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 /**
  * @swagger
  * /expenses:
@@ -110,15 +197,14 @@ router.get('/search', async (req, res) => {
  *         description: Wydatek nie znaleziony
  */
 router.get('/:id', async (req, res) => {
-    try{
-        const expenses = await readDataFromFile();
-        const expense = expenses.find(exp => exp.id === parseInt(req.params.id));
+    try {
+        const expense = await Expense.findById(req.params.id).populate('category', 'name description');
         if (!expense) {
             return res.status(404).json({ message: 'Wydatek nie znaleziony' });
         }
         res.json(expense);
-    } catch (error){
-        res.status(500).json({error: error.message});
+    } catch (error) {
+        res.status(500).json({ error: error.message });
     }
 });
 
@@ -145,12 +231,12 @@ router.get('/:id', async (req, res) => {
  *         description: Nieprawidłowe dane wejściowe
  */
 router.post('/', [
-    check('title').notEmpty().isString().isLength({ min: 3 }).withMessage('Tytuł jest wymagany i musi mieć co najmniej 3 znaki'),
-    check('amount').notEmpty().isFloat({ gt: 0 }).withMessage('Kwota musi być liczbą większą od zera'),
-    check('category').notEmpty().isString().withMessage('Kategoria jest wymagana'),
-    check('date').notEmpty().isISO8601().withMessage('Data musi być w poprawnym formacie'),
-    check('description').optional().isString().isLength({ min: 5 }).withMessage('Opis, jeśli jest podany, musi mieć co najmniej 5 znaków')
-] ,async (req, res) => {
+    check('title').notEmpty().isLength({ min: 3 }).withMessage('Tytuł musi mieć co najmniej 3 znaki'),
+    check('amount').notEmpty().isFloat({ gt: 0 }).withMessage('Kwota musi być większa od 0'),
+    check('category').notEmpty().withMessage('Kategoria jest wymagana'),
+    check('date').notEmpty().isISO8601().withMessage('Nieprawidłowy format daty'),
+    check('description').optional().isLength({ min: 5 }).withMessage('Opis musi mieć co najmniej 5 znaków'),
+], async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
@@ -159,19 +245,20 @@ router.post('/', [
     const { title, amount, category, date, description } = req.body;
 
     try {
-        const expenses = await readDataFromFile();
-        const newExpense = {
-            id: expenses.length ? expenses[expenses.length - 1].id + 1 : 1,
+        const foundCategory = await Category.findOne({ name: category });
+        if (!foundCategory) {
+            return res.status(400).json({ message: 'Podana kategoria nie istnieje' });
+        }
+
+        const newExpense = new Expense({
             title,
             amount,
-            category,
+            category: foundCategory._id,
             date,
-            description
-        };
+            description,
+        });
 
-        expenses.push(newExpense);
-        await writeDataToFile(expenses);
-
+        await newExpense.save();
         res.status(201).json(newExpense);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -210,31 +297,29 @@ router.post('/', [
  *         description: Wydatek nie znaleziony
  */
 router.put('/:id', [
-    check('title').notEmpty().isString().isLength({ min: 3 }).withMessage('Tytuł jest wymagany i musi mieć co najmniej 3 znaki'),
-    check('amount').notEmpty().isFloat({ gt: 0 }).withMessage('Kwota musi być liczbą większą od zera'),
+    check('title').notEmpty().isString().isLength({ min: 3 }).withMessage('Tytuł musi mieć co najmniej 3 znaki'),
+    check('amount').notEmpty().isFloat({ gt: 0 }).withMessage('Kwota musi być większa od zera'),
     check('category').notEmpty().isString().withMessage('Kategoria jest wymagana'),
-    check('date').notEmpty().isISO8601().withMessage('Data musi być w poprawnym formacie'),
-    check('description').optional().isString().isLength({ min: 5 }).withMessage('Opis, jeśli jest podany, musi mieć co najmniej 5 znaków')
-] ,async (req, res) => {
+    check('date').notEmpty().isISO8601().withMessage('Data musi być w formacie ISO8601'),
+    check('description').optional().isString().isLength({ min: 5 }).withMessage('Opis musi mieć co najmniej 5 znaków')
+], async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
     }
 
-    const { title, amount, category, date, description } = req.body;
-
     try {
-        const expenses = await readDataFromFile();
-        const index = expenses.findIndex(exp => exp.id === parseInt(req.params.id));
+        const updatedExpense = await Expense.findByIdAndUpdate(
+            req.params.id,
+            req.body,
+            { new: true, runValidators: true }
+        );
 
-        if (index === -1) {
+        if (!updatedExpense) {
             return res.status(404).json({ message: 'Wydatek nie znaleziony' });
         }
 
-        expenses[index] = { id: parseInt(req.params.id), title, amount, category, date, description };
-        await writeDataToFile(expenses);
-
-        res.json(expenses[index]);
+        res.json(updatedExpense);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -281,31 +366,28 @@ router.put('/:id', [
  *         description: Wydatek nie znaleziony
  */
 router.patch('/:id', [
-    check('title').optional().isString().isLength({ min: 3 }).withMessage('Tytuł jest wymagany i musi mieć co najmniej 3 znaki'),
-    check('amount').optional().isFloat({ gt: 0 }).withMessage('Kwota musi być liczbą większą od zera'),
+    check('title').optional().isString().isLength({ min: 3 }).withMessage('Tytuł musi mieć co najmniej 3 znaki'),
+    check('amount').optional().isFloat({ gt: 0 }).withMessage('Kwota musi być większa od zera'),
     check('category').optional().isString().withMessage('Kategoria jest wymagana'),
-    check('date').optional().isISO8601().withMessage('Data musi być w poprawnym formacie'),
-    check('description').optional().isString().isLength({ min: 5 }).withMessage('Opis, jeśli jest podany, musi mieć co najmniej 5 znaków')
-] ,async (req, res) => {
+    check('date').optional().isISO8601().withMessage('Data musi być w formacie ISO8601'),
+    check('description').optional().isString().isLength({ min: 5 }).withMessage('Opis musi mieć co najmniej 5 znaków')
+], async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
     }
 
-    const updates = req.body;
-
     try {
-        const expenses = await readDataFromFile();
-        const index = expenses.findIndex(exp => exp.id === parseInt(req.params.id));
+        const updatedExpense = await Expense.findByIdAndUpdate(
+            req.params.id,
+            { $set: req.body },
+            { new: true, runValidators: true }
+        );
 
-        if (index === -1) {
+        if (!updatedExpense) {
             return res.status(404).json({ message: 'Wydatek nie znaleziony' });
         }
 
-        const updatedExpense = { ...expenses[index], ...updates };
-        expenses[index] = updatedExpense;
-
-        await writeDataToFile(expenses);
         res.json(updatedExpense);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -333,17 +415,13 @@ router.patch('/:id', [
  */
 router.delete('/:id', async (req, res) => {
     try {
-        const expenses = await readDataFromFile();
-        const index = expenses.findIndex(exp => exp.id === parseInt(req.params.id));
+        const deletedExpense = await Expense.findByIdAndDelete(req.params.id);
 
-        if (index === -1) {
+        if (!deletedExpense) {
             return res.status(404).json({ message: 'Wydatek nie znaleziony' });
         }
 
-        const deletedExpense = expenses.splice(index, 1);
-        await writeDataToFile(expenses);
-
-        res.json(deletedExpense[0]);
+        res.json(deletedExpense);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

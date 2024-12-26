@@ -3,7 +3,7 @@
     "id": 1,
     "title": "zakup spożywczy",
     "amount": 250,
-    "category": "jedzenie",
+    "category": "676d5cf32985ffc731b62b4d",
     "date": "2024-04-10",
     "description": "zakup produktów w sklepie lidl."
   },
@@ -11,7 +11,7 @@
     "id": 2,
     "title": "Opłata za internet",
     "amount": 80,
-    "category": "rachunki",
+    "category": "676d5cf32985ffc731b62b4e",
     "date": "2024-04-05",
     "description": "Miesięczna opłata za internet."
   },
@@ -19,7 +19,7 @@
     "id": 3,
     "title": "Bilet za koncert",
     "amount": 200,
-    "category": "rozrywka",
+    "category": "676d5cf32985ffc731b62b4f",
     "date": "2024-03-25",
     "description": "Bilet na koncert ulubionego zespołu."
   },
@@ -27,7 +27,7 @@
     "id": 4,
     "title": "test",
     "amount": 200,
-    "category": "jedzenie",
+    "category": "676d5cf32985ffc731b62b4d",
     "date": "2024-11-24",
     "description": "Zakup test"
   },
@@ -35,35 +35,35 @@
     "id": 5,
     "title": "test11",
     "amount": 100,
-    "category": "jedzenie",
+    "category": "676d5cf32985ffc731b62b4d",
     "date": "2024-10-24"
   },
   {
     "id": 8,
     "title": "lab10",
     "amount": 21000,
-    "category": "rozrywka",
+    "category": "676d5cf32985ffc731b62b4f",
     "date": "2024-12-08"
   },
   {
     "id": 9,
     "title": "tet",
     "amount": 14105,
-    "category": "jedzenie",
+    "category": "676d5cf32985ffc731b62b4d",
     "date": "2024-12-21"
   },
   {
     "id": 10,
     "title": "test11",
     "amount": 12,
-    "category": "jedzenie",
+    "category": "676d5cf32985ffc731b62b4d",
     "date": "2024-11-27"
   },
   {
     "id": 11,
     "title": "testlab10",
     "amount": 250,
-    "category": "transport",
+    "category": "676d5cf32985ffc731b62b50",
     "date": "2024-12-16",
     "description": "testlab10"
   }

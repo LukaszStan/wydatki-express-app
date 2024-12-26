@@ -1,4 +1,5 @@
 const express = require('express');
+const dotenv = require("dotenv");
 const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
@@ -19,6 +20,8 @@ const corsOptions = {
   allowedHeaders: ['Content-Type', 'Authorization'],
 };
 
+dotenv.config();
+
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'pug');
@@ -32,7 +35,7 @@ app.use(cors(corsOptions));
 
 // Połączenie z MongoDB
 const dbURI = process.env.MONGO_URI;
-mongoose.connect(dbURI, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(dbURI)
     .then(() => console.log('Połączono z MongoDB'))
     .catch(err => console.error('Błąd połączenia z MongoDB:', err));
 
