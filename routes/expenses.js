@@ -1,42 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const path = require('path');
-const fs = require('fs');
 const { check, validationResult } = require('express-validator');
-
-const filePath = path.join(__dirname, '../public/data/expenses-data.json');
-
-//wczytywanie pliku
-const readDataFromFile = () => {
-    return new Promise((resolve, reject) => {
-        fs.readFile(filePath, 'utf8', (err, data) => {
-            if (err) {
-                console.error('Error reading expenses data file:', err);
-                return reject(new Error('Could not load expenses data'));
-            }
-            try {
-                const expenses = JSON.parse(data);
-                resolve(expenses);
-            } catch (parseError) {
-                console.error('Error parsing expenses data file:', parseError);
-                reject(new Error('Could not parse expenses data'));
-            }
-        });
-    });
-}
-
-//zapis do pliku
-const writeDataToFile = (data) => {
-    return new Promise((resolve, reject) => {
-        fs.writeFile(filePath, JSON.stringify(data, null, 2), (err) => {
-            if (err) {
-                console.error('Error writing expenses data file:', err);
-                return reject(new Error('Could not save expenses data'));
-            }
-            resolve();
-        });
-    })
-}
+const Expense = require('../models/Expense');
+const Category = require('../models/Category');
 
 /**
  * @swagger
@@ -56,7 +22,7 @@ const writeDataToFile = (data) => {
  */
 router.get('/', async(req, res) => {
     try{
-        const expenses = await readDataFromFile();
+        const expenses = await Expense.find().populate('category', 'name description');
         res.json(expenses);
     } catch (error) {
         res.status(500).json({error: error.message});
@@ -100,21 +66,21 @@ router.get('/', async(req, res) => {
  *               items:
  *                 $ref: '#/definitions/Expense'
  */
-router.get('/search', async (req, res) =>{
+router.get('/search', async (req, res) => {
     const { category, minAmount, maxAmount, date } = req.query;
+    const filter = {};
+
+    if (category) {
+        const foundCategory = await Category.findOne({ name: category });
+        if (foundCategory) filter.category = foundCategory._id;
+    }
+    if (minAmount) filter.amount = { ...filter.amount, $gte: parseFloat(minAmount) };
+    if (maxAmount) filter.amount = { ...filter.amount, $lte: parseFloat(maxAmount) };
+    if (date) filter.date = date;
 
     try {
-        const expenses = await readDataFromFile();
-        const filteredExpenses = expenses.filter(exp => {
-            return (
-                (!category || exp.category === category) &&
-                (!minAmount || exp.amount >= parseFloat(minAmount)) &&
-                (!maxAmount || exp.amount <= parseFloat(maxAmount)) &&
-                (!date || exp.date === date)
-            );
-        });
-
-        res.json(filteredExpenses);
+        const expenses = await Expense.find(filter).populate('category', 'name description');
+        res.json(expenses);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

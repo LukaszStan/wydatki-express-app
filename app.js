@@ -31,7 +31,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(cors(corsOptions));
 
 // Połączenie z MongoDB
-const dbURI = process.env.MONGO_URI || 'mongodb+srv://s27131:zaq12wsx@cluster0.zzpe9.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
+const dbURI = process.env.MONGO_URI;
 mongoose.connect(dbURI, { useNewUrlParser: true, useUnifiedTopology: true })
     .then(() => console.log('Połączono z MongoDB'))
     .catch(err => console.error('Błąd połączenia z MongoDB:', err));
